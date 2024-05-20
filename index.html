@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Uygulaması</title>
+    <style>
+        body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    max-width: 600px;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.question {
+    margin-bottom: 30px;
+}
+
+.question h2 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.choices button {
+    display: block;
+    width: 100%;
+    padding: 10px 20px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ea84d4;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.choices button:hover {
+    background-color: #a0456b;
+}
+
+#results {
+    margin-top: 20px;
+    border-top: 1px solid #ddd;
+    padding-top: 20px;
+}
+
+#results h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#results table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#results th, #results td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+#results th {
+    background-color: #f2f2f2;
+    color: #333;
+}
+
+#results tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quiz Uygulaması</h1>
+        <div id="quiz">
+            
+        </div>
+        <div id="results">
+            
+        </div>
+    </div>
+    <script>
+        const quizContainer = document.getElementById('quiz');
+        const resultsContainer = document.getElementById('results');
+        const apiUrl = 'https://jsonplaceholder.typicode.com/posts';
+        const questionCount = 10; 
+        const choices = ['A', 'B', 'C', 'D']; 
+        let currentQuestionIndex = 0;
+        let questions = [];
+        let answers = [];
+
+        
+        async function fetchQuestions() {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                questions = data.slice(0, questionCount); 
+                displayQuestion(questions[currentQuestionIndex]);
+            } catch (error) {
+                console.error('Soruları alma hatası:', error);
+            }
+        }
+
+       
+        function displayQuestion(question) {
+            const questionElement = document.createElement('div');
+            questionElement.classList.add('question');
+            questionElement.innerHTML = `
+                <h2>Soru ${currentQuestionIndex + 1}</h2>
+                <p>${question.title}</p>
+                <div class="choices">
+                    ${choices.map((choice, index) => `
+                        <button id="choice-${choice}" onclick="handleAnswer('${choice}')" ${currentQuestionIndex < 1 ? 'disabled' : ''}>
+                            ${choice}) ${question.body.split('\n')[index]}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            quizContainer.innerHTML = '';
+            quizContainer.appendChild(questionElement);
+            startTimer();
+        }
+
+        
+        function startTimer() {
+            let secondsLeft = 30;
+            const timer = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft === 10) {
+                    enableAnswerButtons();
+                }
+                if (secondsLeft === 0) {
+                    clearInterval(timer);
+                    goToNextQuestion();
+                }
+            }, 1000);
+        }
+
+     
+        function enableAnswerButtons() {
+            const answerButtons = document.querySelectorAll('.choices button');
+            answerButtons.forEach(button => {
+                button.disabled = false;
+            });
+        }
+
+       
+        function handleAnswer(choice) {
+            answers.push(choice);
+            disableAnswerButtons();
+            goToNextQuestion(); 
+        }
+
+      
+        function disableAnswerButtons() {
+            const answerButtons = document.querySelectorAll('.choices button');
+            answerButtons.forEach(button => {
+                button.disabled = true;
+            });
+        }
+
+       
+        function goToNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questionCount) {
+                displayQuestion(questions[currentQuestionIndex]); 
+            } else {
+                displayResults(); 
+            }
+        }
+
+        
+        function displayResults() {
+            resultsContainer.innerHTML = '<h2>Sonuçlar</h2>';
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+            const trHeader = document.createElement('tr');
+            trHeader.innerHTML = '<th>Soru</th><th>Cevap</th>';
+            thead.appendChild(trHeader);
+            answers.forEach((answer, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>Soru ${index + 1}</td><td>${answer}</td>`;
+                tbody.appendChild(tr);
+            });
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            resultsContainer.appendChild(table);
+        }
+
+        
+        fetchQuestions();
+    </script>
+</body>
+</html>
